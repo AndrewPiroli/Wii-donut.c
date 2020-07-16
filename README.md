@@ -1,7 +1,9 @@
 # Wii-donut.c
 A port of donut.c to the Wii
 
-Exit to HBC by pressing home on Wiimote, no other controls supported.
+Exit to HBC by pressing home on Wiimote, start/pause on GC controller, or console reset button.
+
+Shutdown Wii with console power button or Wiimote power button.
 
 &nbsp;
 
