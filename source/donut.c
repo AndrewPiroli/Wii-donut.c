@@ -23,11 +23,14 @@
 
 static void *xfb = NULL;
 static GXRModeObj *rmode = NULL;
+bool do_reset = false;
+bool do_die = false;
 
 int main(void) {
 	//Wii garbage start
 	VIDEO_Init();
-	WPAD_Init();
+	WPAD_Init(); //Wiimote support
+	PAD_Init(); //GC controller support
 	rmode = VIDEO_GetPreferredMode(NULL);
 	xfb = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	console_init(xfb, 0, 0, rmode->fbWidth, rmode->xfbHeight,
@@ -40,6 +43,9 @@ int main(void) {
 	if (rmode->viTVMode & VI_NON_INTERLACE) {
 		VIDEO_WaitVSync();
 	}
+	SYS_SetResetCallback(reset_btn); //Console reset button support
+	SYS_SetPowerCallback(power_btn); //Console power button support
+	WPAD_SetPowerButtonCallback(power_btn); //Wiimote power button support
 	//Wii garbage end
 
 	float A = 0;		// rotation around one axis (radians)
@@ -122,11 +128,33 @@ int main(void) {
 }
 
 void check_ui_exit() {
+	// Check Wiimote for exit condition
 	WPAD_ScanPads();
 	u32 pressed = WPAD_ButtonsDown(0);
 	if (pressed & WPAD_BUTTON_HOME) {
+		do_reset = true;
+	}
+	//Check GC Controller for exit condition
+	PAD_ScanPads();
+	pressed = PAD_ButtonsDown(0);
+	if (pressed & PAD_BUTTON_START) {
+		do_reset = true;
+	}
+	if (do_reset){
 		exit(0);
 	}
+	if (do_die){
+		SYS_ResetSystem(SYS_POWEROFF_STANDBY,0,0);
+	}
+
+}
+
+void reset_btn(){
+	do_reset = true;
+}
+
+void power_btn(){
+	do_die = true;
 }
 
 void blit_buffer(char pixel_buffer[]) {
