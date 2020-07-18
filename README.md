@@ -1,9 +1,9 @@
 # Wii-donut.c
 A port of donut.c to the Wii
 
-Controls:
-
 &nbsp;
+
+Controls:
 
 Return to HBC/loader -- Wiimote: Home -- GC: Start -- Console: Reset
 
