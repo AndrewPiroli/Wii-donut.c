@@ -9,9 +9,9 @@ Poweroff console -- Wiimote: Power button -- Console: Power button
 
 Toggle debug output -- Wiimote: 1 -- GC: Y
 
-Adjust rotation speed (axis "A") -- Wiimote & GC: DPAD up/down
+Adjust rotation speed (axis "A") -- Wiimote & GC: DPAD left/right
  
-Adjust rotation speed (axis "B") -- Wiimote & GC: DPAD left/right
+Adjust rotation speed (axis "B") -- Wiimote & GC: DPAD up/down
 
 Reset rotation speed (both axis) -- Wiimote: 2 -- GC: X
 
