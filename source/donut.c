@@ -13,10 +13,6 @@
 #define IMAGE_SCALE 15
 #define TWO_PI 6.28
 
-// rotation increment around each axis
-#define DELTA_A 0.04
-#define DELTA_B 0.02
-
 // donut point traversal increment (inverse of density)
 #define DELTA_J 0.07
 #define DELTA_I 0.02
@@ -25,6 +21,11 @@ static void *xfb = NULL;
 static GXRModeObj *rmode = NULL;
 bool do_reset = false;
 bool do_die = false;
+bool debug = false;
+
+// rotation increment around each axis
+double DELTA_A = 0.04;
+double DELTA_B = 0.02;
 
 int main(void) {
 	//Wii garbage start
@@ -123,22 +124,87 @@ int main(void) {
 
 		A += DELTA_A;
 		B += DELTA_B;
-		check_ui_exit();
+		check_ui();
 	}
 }
 
-void check_ui_exit() {
-	// Check Wiimote for exit condition
+void check_ui() {
+	//In rare cases messing with some values can leave artifacts on screen
+	//So set a flag to clear the screen if the user changes internal values
+	bool dirty = false;
+	// Check Wiimote
 	WPAD_ScanPads();
 	u32 pressed = WPAD_ButtonsDown(0);
 	if (pressed & WPAD_BUTTON_HOME) {
 		do_reset = true;
 	}
-	//Check GC Controller for exit condition
+	if (pressed & WPAD_BUTTON_LEFT){
+		DELTA_A -= 0.0025;
+		dirty = true;
+	}
+	if (pressed & WPAD_BUTTON_RIGHT){
+		DELTA_A += 0.0025;
+		dirty = true;
+	}
+	if (pressed & WPAD_BUTTON_UP){
+		DELTA_B += 0.0025;
+		dirty = true;
+	}
+	if (pressed & WPAD_BUTTON_DOWN){
+		DELTA_B -= 0.0025;
+		dirty = true;
+	}
+	if (pressed & WPAD_BUTTON_1){
+		if (debug){
+			debug = false;
+		}else{
+			debug = true;
+		}
+		dirty = true;
+	}
+	if (pressed & WPAD_BUTTON_2){
+		DELTA_A = 0.04;
+		DELTA_B = 0.02;
+		dirty = true;
+	}
+	//Check GC Controller
 	PAD_ScanPads();
 	pressed = PAD_ButtonsDown(0);
+	if (pressed & PAD_BUTTON_LEFT){
+		DELTA_A -= 0.0025;
+		dirty = true;
+	}
+	if (pressed & PAD_BUTTON_RIGHT){
+		DELTA_A += 0.0025;
+		dirty = true;
+	}
+	if (pressed & PAD_BUTTON_UP){
+		DELTA_B += 0.0025;
+		dirty = true;
+	}
+	if (pressed & PAD_BUTTON_DOWN){
+		DELTA_B -= 0.0025;
+		dirty = true;
+	}
+
 	if (pressed & PAD_BUTTON_START) {
 		do_reset = true;
+	}
+	if (pressed & PAD_BUTTON_Y){
+		if (debug){
+			debug = false;
+		}else{
+			debug = true;
+		}
+		dirty = true;
+	}
+	if (pressed & PAD_BUTTON_X){
+		DELTA_A = 0.04;
+		DELTA_B = 0.02;
+		dirty = true;
+	}
+	if (dirty){
+		printf("\x1b[2J");
 	}
 	if (do_reset){
 		exit(0);
@@ -164,6 +230,9 @@ void blit_buffer(char pixel_buffer[]) {
 	//For some reason this is too high on the Wii?
 	//Try offsetting a few newlines
 	printf("\n");
+	if (debug){
+		printf("DELTA_A: %f DELTA_B: %f", DELTA_A, DELTA_B);
+	}
 	// for every char in the buffer
 	for (buffer_pos = 0; buffer_pos < 1 + BUFFER_SIZE; buffer_pos++) {
 		// newline if necessary
@@ -173,6 +242,7 @@ void blit_buffer(char pixel_buffer[]) {
 			putchar(pixel_buffer[buffer_pos]);
 		}
 	}
+
 	VIDEO_WaitVSync();
 }
 

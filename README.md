@@ -1,9 +1,21 @@
 # Wii-donut.c
 A port of donut.c to the Wii
 
-Exit to HBC by pressing home on Wiimote, start/pause on GC controller, or console reset button.
+Controls:
 
-Shutdown Wii with console power button or Wiimote power button.
+&nbsp;
+
+Return to HBC/loader -- Wiimote: Home -- GC: Start -- Console: Reset
+
+Poweroff console -- Wiimote: Power button -- Console: Power button
+
+Toggle debug output -- Wiimote: 1 -- GC: Y
+
+Adjust rotation speed (axis "A") -- Wiimote & GC: DPAD up/down
+ 
+Adjust rotation speed (axis "B") -- Wiimote & GC: DPAD left/right
+
+Reset rotation speed (both axis) -- Wiimote: 2 -- GC: X
 
 &nbsp;
 

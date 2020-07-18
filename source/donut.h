@@ -3,7 +3,7 @@
 int main(void);
 void blit_buffer(char[]);
 char intensity_char(float);
-void check_ui_exit();
+void check_ui();
 void reset_btn();
 void power_btn();
 #endif
