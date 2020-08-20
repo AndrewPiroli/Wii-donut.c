@@ -28,7 +28,6 @@ bool debug = false;
 double DELTA_A = 0.04;
 double DELTA_B = 0.02;
 
-const char* pad_string = "                                             ";
 
 int main(void) {
 	//Wii garbage start
@@ -264,21 +263,17 @@ static inline void print_goodbye(const char* message){
 	//Assuming a 25 line 80 col terminal
 	//And a message that fits comfortly on 1 line without wrapping
 	//Pad the message vertically and horizontally
-	int req_padding;
-	int message_len;
 	printf("\x1b[2J"); //Clear screen
 	printf("\x1b[H"); //Reset cursor
 	if (message == NULL){
 		return;
 	}
-	message_len = strlen(message);
-	if (message_len > 78){
+	unsigned int half_message_len = floor(strlen(message)/2);
+	if (half_message_len > 39){
 		return;
 	}
-	req_padding = floor((80 - message_len) / 2);
 	printf("\n\n\n\n\n\n\n\n\n\n\n\n\n"); //Vertical padding
-	printf("%.*s", req_padding, pad_string);
-	puts(message);
+	printf("%*s%s\n", 40-half_message_len, "", message);
 	usleep(500000);
 	// Program is about to die, so no cleanup needed.
 }
