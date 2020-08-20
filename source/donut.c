@@ -210,7 +210,7 @@ void check_ui() {
 		printf("\x1b[2J");
 	}
 	if (do_reset){
-		print_goodbye("Returning to HBC!");
+		print_goodbye("Returning to loader!");
 		exit(0);
 	}
 	if (do_die){
