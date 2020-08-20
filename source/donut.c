@@ -262,7 +262,7 @@ char intensity_char(float intensity) {
 
 static inline void print_goodbye(const char* message){
 	//Assuming a 25 line 80 col terminal
-	//And a message that fits on 1 line without wrapping
+	//And a message that fits comfortly on 1 line without wrapping
 	//Pad the message vertically and horizontally
 	int req_padding;
 	int message_len;
@@ -278,8 +278,7 @@ static inline void print_goodbye(const char* message){
 	req_padding = floor((80 - message_len) / 2);
 	printf("\n\n\n\n\n\n\n\n\n\n\n\n\n"); //Vertical padding
 	printf("%.*s", req_padding, pad_string);
-	printf(message);
-	printf("%.*s", req_padding, pad_string);
+	puts(message);
 	usleep(500000);
 	// Program is about to die, so no cleanup needed.
 }
