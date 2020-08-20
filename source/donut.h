@@ -6,4 +6,5 @@ char intensity_char(float);
 void check_ui();
 void reset_btn();
 void power_btn();
+static inline void print_goodbye(const char*);
 #endif

@@ -3,6 +3,7 @@
 #include <wiiuse/wpad.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
 
 #include "donut.h"
 
@@ -26,6 +27,8 @@ bool debug = false;
 // rotation increment around each axis
 double DELTA_A = 0.04;
 double DELTA_B = 0.02;
+
+const char* pad_string = "                                             ";
 
 int main(void) {
 	//Wii garbage start
@@ -207,9 +210,11 @@ void check_ui() {
 		printf("\x1b[2J");
 	}
 	if (do_reset){
+		print_goodbye("Returning to HBC!");
 		exit(0);
 	}
 	if (do_die){
+		print_goodbye("Shutting down system!");
 		SYS_ResetSystem(SYS_POWEROFF_STANDBY,0,0);
 	}
 
@@ -253,4 +258,28 @@ char intensity_char(float intensity) {
 		return gradient[gradient_position];
 	}
 	return gradient[0];
+}
+
+static inline void print_goodbye(const char* message){
+	//Assuming a 25 line 80 col terminal
+	//And a message that fits on 1 line without wrapping
+	//Pad the message vertically and horizontally
+	int req_padding;
+	int message_len;
+	printf("\x1b[2J"); //Clear screen
+	printf("\x1b[H"); //Reset cursor
+	if (message == NULL){
+		return;
+	}
+	message_len = strlen(message);
+	if (message_len > 78){
+		return;
+	}
+	req_padding = floor((80 - message_len) / 2);
+	printf("\n\n\n\n\n\n\n\n\n\n\n\n\n"); //Vertical padding
+	printf("%.*s", req_padding, pad_string);
+	printf(message);
+	printf("%.*s", req_padding, pad_string);
+	usleep(500000);
+	// Program is about to die, so no cleanup needed.
 }
