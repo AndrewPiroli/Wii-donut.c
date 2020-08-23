@@ -272,8 +272,8 @@ static inline void print_goodbye(const char* message){
 	if (half_message_len > 39){
 		return;
 	}
-	printf("\n\n\n\n\n\n\n\n\n\n\n\n\n"); //Vertical padding
-	printf("%*s%s\n", 40-half_message_len, "", message);
+	printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n" //Vertical padding
+	"%*s%s\n", 40-half_message_len, "", message);
 	usleep(500000);
 	// Program is about to die, so no cleanup needed.
 }
