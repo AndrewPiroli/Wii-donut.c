@@ -261,7 +261,7 @@ char intensity_char(float intensity) {
 
 static inline void print_goodbye(const char* message){
 	//Assuming a 25 line 80 col terminal
-	//And a message that fits comfortly on 1 line without wrapping
+	//And a message that fits comfortably on 1 line without wrapping
 	//Pad the message vertically and horizontally
 	printf("\x1b[2J"); //Clear screen
 	printf("\x1b[H"); //Reset cursor
