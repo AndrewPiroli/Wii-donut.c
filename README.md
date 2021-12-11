@@ -1,25 +1,23 @@
 # Wii-donut.c
 A port of donut.c to the Wii
 
-### Controls:
 
-Return to HBC/loader -- Wiimote: Home -- GC: Start -- Console: Reset
+### Controls
 
-Poweroff console -- Wiimote: Power button -- Console: Power button
+| Action | Wiimote | Gamecube Controller | Console Buttons |
+|---|---|---|---|
+| Exit (return to HBC/loader) | Home | Start/Pause | Reset |
+| Power off console | Power | N/A | Power |
+| Toggle debug mode | 1 | Y | N/A |
+| Adjust rotation speed (A axis) | D-pad left/right | D-pad left/right | N/A |
+| Adjust rotation speed (B axis) | D-pad up/down | D-pad up/down | N/A |
+| Reset rotation speed (both axis) | 2 | X | N/A|
 
-Toggle debug output -- Wiimote: 1 -- GC: Y
+### Acknowledgments
 
-Adjust rotation speed (axis "A") -- Wiimote & GC: DPAD left/right
- 
-Adjust rotation speed (axis "B") -- Wiimote & GC: DPAD up/down
+a1k0n for the original basis and explaing the math behind it.
 
-Reset rotation speed (both axis) -- Wiimote: 2 -- GC: X
-
-&nbsp;
-
-Thank's to a1k0n for the original basis and explaing the math behind it.
-
-And thanks to an anonymous Github gister for making the code readable and portable.
+An anonymous Github gister for making the code readable and portable.
 
 The gist this was directly ported from: https://gist.github.com/anonymous/1073922
 
