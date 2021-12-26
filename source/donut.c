@@ -6,8 +6,9 @@
 
 #include <gccore.h>
 #include <gctypes.h>
+#ifdef HW_RVL
 #include <wiiuse/wpad.h>
-
+#endif //HW_RVL
 #include "donut.h"
 
 #define BUFFER_WIDTH 80
@@ -36,7 +37,6 @@ static volatile double DELTA_B = 0.02;
 
 int main(void) {
 	VIDEO_Init();
-	WPAD_Init();
 	PAD_Init(); 
 	// setup video and console parameters
 	rmode = VIDEO_GetPreferredMode(NULL);
@@ -53,9 +53,11 @@ int main(void) {
 	}
 	// setup callbacks for console buttons and wiimote power button
 	SYS_SetResetCallback(reset_btn); //Console reset button support
+#ifdef HW_RVL
 	SYS_SetPowerCallback(power_btn); //Console power button support
+	WPAD_Init();
 	WPAD_SetPowerButtonCallback(power_btn); //Wiimote power button support
-
+#endif //HW_RVL
 	// Set the main thread (this thread) to high priority because it does the calculations and blits the buffer to screen
 	lwp_t mainthread = LWP_THREAD_NULL;
 	mainthread = LWP_GetSelf();
@@ -176,9 +178,11 @@ void *input_thread(__attribute__((unused)) void* args){
 }
 
 void check_controllers() {
+	u32 pressed;
 	// Check Wiimote
+#ifdef HW_RVL
 	WPAD_ScanPads();
-	u32 pressed = WPAD_ButtonsDown(0);
+	pressed = WPAD_ButtonsDown(0);
 	if (pressed & WPAD_BUTTON_HOME) {
 		do_reset = true;
 	}
@@ -207,6 +211,7 @@ void check_controllers() {
 		DELTA_B = 0.02;
 		dirty = true;
 	}
+#endif //HW_RVL
 	//Check GC Controller
 	PAD_ScanPads();
 	pressed = PAD_ButtonsDown(0);
