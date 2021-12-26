@@ -13,6 +13,16 @@ A port of donut.c to the Wii
 | Adjust rotation speed (B axis) | D-pad up/down | D-pad up/down | N/A |
 | Reset rotation speed (both axis) | 2 | X | N/A|
 
+### Building
+
+Requires devkitPro/devkitPPC
+
+No external dependencies.
+
+To build for Wii run `make`
+
+To build for Gamecube run `make -f Makefile.gc`
+
 ### Acknowledgments
 
 a1k0n for the original basis and explaing the math behind it.
