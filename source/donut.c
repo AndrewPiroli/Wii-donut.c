@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <wiiuse/wpad.h>
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
+
+#include <gccore.h>
+#include <gctypes.h>
+#include <wiiuse/wpad.h>
 
 #include "donut.h"
 
@@ -20,20 +23,22 @@
 
 static void *xfb = NULL;
 static GXRModeObj *rmode = NULL;
-bool do_reset = false;
-bool do_die = false;
-bool debug = false;
+
+static volatile bool do_reset = false;
+static volatile bool do_die = false;
+static volatile bool debug = false;
+static volatile bool dirty = false;
 
 // rotation increment around each axis
-double DELTA_A = 0.04;
-double DELTA_B = 0.02;
+static volatile double DELTA_A = 0.04;
+static volatile double DELTA_B = 0.02;
 
 
 int main(void) {
-	//Wii garbage start
 	VIDEO_Init();
-	WPAD_Init(); //Wiimote support
-	PAD_Init(); //GC controller support
+	WPAD_Init();
+	PAD_Init(); 
+	// setup video and console parameters
 	rmode = VIDEO_GetPreferredMode(NULL);
 	xfb = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	console_init(xfb, 0, 0, rmode->fbWidth, rmode->xfbHeight,
@@ -46,11 +51,28 @@ int main(void) {
 	if (rmode->viTVMode & VI_NON_INTERLACE) {
 		VIDEO_WaitVSync();
 	}
+	// setup callbacks for console buttons and wiimote power button
 	SYS_SetResetCallback(reset_btn); //Console reset button support
 	SYS_SetPowerCallback(power_btn); //Console power button support
 	WPAD_SetPowerButtonCallback(power_btn); //Wiimote power button support
-	//Wii garbage end
 
+	// Set the main thread (this thread) to high priority because it does the calculations and blits the buffer to screen
+	lwp_t mainthread = LWP_THREAD_NULL;
+	mainthread = LWP_GetSelf();
+	if (mainthread != LWP_THREAD_NULL){
+		LWP_SetThreadPriority(mainthread, LWP_PRIO_HIGHEST);
+	}
+	// Create another thread to poll the controller.
+	lwp_t controller_thread = LWP_THREAD_NULL;
+	// How do I pick a stack size??
+	// Is there a rule of thumb? 
+	// 1KB seems to be working /shrug
+	LWP_CreateThread(&controller_thread, input_thread, NULL,NULL, 1024, LWP_PRIO_IDLE);
+	// Setup done - start the main program loop.
+	donut_loop();
+}
+
+void donut_loop(){
 	float A = 0;		// rotation around one axis (radians)
 	float B = 0;		// rotation around other axis (radians)
 	float i;
@@ -123,17 +145,37 @@ int main(void) {
 		}
 
 		blit_buffer(pixel_buffer);
-
+		// We could use a lock around these since they could be updated by the other thread in-between
+		// but it's a spinning donut, so who cares if the rotation is a few radians off what the user technically wanted
 		A += DELTA_A;
 		B += DELTA_B;
-		check_ui();
+		// Ugly to do this here, but I would have to hoist a bunch of things out of this function to move it properly, so it stays :)
+		if (dirty){
+			printf("\x1b[2J");
+			dirty = false;
+		}
+		if (do_reset){
+			print_goodbye("Returning to loader!");
+			exit(0);
+		}
+		if (do_die){
+			print_goodbye("Shutting down system!");
+			SYS_ResetSystem(SYS_POWEROFF_STANDBY,0,0);
+		}
 	}
 }
 
-void check_ui() {
-	//In rare cases messing with some values can leave artifacts on screen
-	//So set a flag to clear the screen if the user changes internal values
-	bool dirty = false;
+void *input_thread(__attribute__((unused)) void* args){
+	while(!do_die || !do_reset){
+		check_controllers();
+		usleep(50000);
+	}
+	// Supress return type error/warning
+	// I'm sure some future version of libogc will turn this into a null pointer dereference
+	return (void*)NULL;
+}
+
+void check_controllers() {
 	// Check Wiimote
 	WPAD_ScanPads();
 	u32 pressed = WPAD_ButtonsDown(0);
@@ -157,11 +199,7 @@ void check_ui() {
 		dirty = true;
 	}
 	if (pressed & WPAD_BUTTON_1){
-		if (debug){
-			debug = false;
-		}else{
-			debug = true;
-		}
+		debug = !debug;
 		dirty = true;
 	}
 	if (pressed & WPAD_BUTTON_2){
@@ -193,28 +231,13 @@ void check_ui() {
 		do_reset = true;
 	}
 	if (pressed & PAD_BUTTON_Y){
-		if (debug){
-			debug = false;
-		}else{
-			debug = true;
-		}
+		debug = !debug;
 		dirty = true;
 	}
 	if (pressed & PAD_BUTTON_X){
 		DELTA_A = 0.04;
 		DELTA_B = 0.02;
 		dirty = true;
-	}
-	if (dirty){
-		printf("\x1b[2J");
-	}
-	if (do_reset){
-		print_goodbye("Returning to loader!");
-		exit(0);
-	}
-	if (do_die){
-		print_goodbye("Shutting down system!");
-		SYS_ResetSystem(SYS_POWEROFF_STANDBY,0,0);
 	}
 
 }
