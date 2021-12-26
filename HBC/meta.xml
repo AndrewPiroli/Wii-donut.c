@@ -2,7 +2,7 @@
 <app version="1">
   <name>donut.c</name>
   <coder>Andrew Piroli</coder>
-  <version>r6</version>
+  <version>r7</version>
   <short_description>A port of donut.c</short_description>
   <long_description>
 	A port of donut.c a 3D spinning donut in ASCII art style.
