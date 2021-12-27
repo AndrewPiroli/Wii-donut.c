@@ -34,6 +34,7 @@ static volatile bool dirty = false;
 static volatile double DELTA_A = 0.04;
 static volatile double DELTA_B = 0.02;
 
+static lwp_t controller_thread_handle = LWP_THREAD_NULL;
 
 int main(void) {
 	VIDEO_Init();
@@ -65,11 +66,10 @@ int main(void) {
 		LWP_SetThreadPriority(mainthread, LWP_PRIO_HIGHEST);
 	}
 	// Create another thread to poll the controller.
-	lwp_t controller_thread = LWP_THREAD_NULL;
 	// How do I pick a stack size??
 	// Is there a rule of thumb? 
 	// 1KB seems to be working /shrug
-	LWP_CreateThread(&controller_thread, input_thread, NULL,NULL, 1024, LWP_PRIO_IDLE);
+	LWP_CreateThread(&controller_thread_handle, input_thread, NULL, NULL, 1024, LWP_PRIO_IDLE);
 	// Setup done - start the main program loop.
 	donut_loop();
 }
@@ -156,19 +156,22 @@ void donut_loop(){
 			printf("\x1b[2J");
 			dirty = false;
 		}
-		if (do_reset){
-			print_goodbye("Returning to loader!");
-			exit(0);
-		}
-		if (do_die){
-			print_goodbye("Shutting down system!");
-			SYS_ResetSystem(SYS_POWEROFF_STANDBY,0,0);
+		if (do_reset || do_die){
+			LWP_JoinThread(controller_thread_handle, NULL);
+			if (do_reset){
+				print_goodbye("Returning to loader!");
+				exit(0);
+			}
+			if (do_die){
+				print_goodbye("Shutting down system!");
+				SYS_ResetSystem(SYS_POWEROFF_STANDBY,0,0);
+			}
 		}
 	}
 }
 
 void *input_thread(__attribute__((unused)) void* args){
-	while(!do_die || !do_reset){
+	while(!do_die && !do_reset){
 		check_controllers();
 		usleep(50000);
 	}
