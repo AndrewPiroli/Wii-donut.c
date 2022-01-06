@@ -1,5 +1,5 @@
 # Wii-donut.c
-A port of donut.c to the Wii
+A port of donut.c to the Wii and GameCube
 
 
 ### Controls
