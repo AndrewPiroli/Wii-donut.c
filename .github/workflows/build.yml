@@ -33,3 +33,20 @@ jobs:
           path: |
             Wii-donut.c.dol
             Wii-donut.c-gc.dol
+  build-unstable:
+    name: Canary Build
+    runs-on: ubuntu-latest
+    container:
+      image: docker://devkitpro/devkitppc:latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+       
+      - name: Build Wii and GC executables
+        run: |
+          make
+          mv Wii-donut.c.dol Wii-donut.c.dol.stash
+          make clean
+          make -f Makefile.gc
+          mv Wii-donut.c.dol.stash Wii-donut.c.dol
