@@ -32,4 +32,4 @@ jobs:
           name: Stable build results
           path: |
             Wii-donut.c.dol
-            Wii-donut.c-dc.dol
+            Wii-donut.c-gc.dol
