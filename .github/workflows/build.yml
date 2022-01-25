@@ -1,0 +1,35 @@
+name: Build with devkitPPC
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+
+jobs:
+  build-stable:
+    name: Stable Build
+    runs-on: ubuntu-latest
+    container:
+      image: docker://devkitpro/devkitppc@20220103
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+       
+      - name: Build Wii and GC executables
+        run: |
+          make
+          mv Wii-donut.c.dol Wii-donut.c.dol.stash
+          make clean
+          make -f Makefile.gc
+          mv Wii-donut.c.dol.stash Wii-donut.c.dol
+
+      - name: Upload result
+        uses: actions/upload-artifact@v2.3.1
+        with:
+          name: Stable build results
+          path: |
+            Wii-donut.c.dol
+            Wii-donut.c-dc.dol
