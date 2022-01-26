@@ -48,5 +48,20 @@ jobs:
       - name: Build Wii and GC executables
         run: |
           make
+          mv Wii-donut.c.dol Wii-donut.c.dol.stash
+          mv Wii-donut.c.elf Wii-donut.c.elf.stash
           make clean
           make -f Makefile.gc
+          mv Wii-donut.c.dol.stash Wii-donut.c.dol
+          mv Wii-donut.c.elf.stash Wii-donut.c.elf
+          
+      - name: Upload result
+        uses: actions/upload-artifact@v2.3.1
+        with:
+          name: Unstable build results
+          path: |
+            Wii-donut.c.dol
+            Wii-donut.c.elf
+            Wii-donut.c-gc.dol
+            Wii-donut.c-gc.elf
+          retention-days: 1
