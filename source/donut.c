@@ -9,7 +9,6 @@
 #ifdef HW_RVL
 #include <wiiuse/wpad.h>
 #endif //HW_RVL
-#include "donut.h"
 
 #define BUFFER_WIDTH 80
 #define BUFFER_HEIGHT 27
@@ -21,6 +20,18 @@
 // donut point traversal increment (inverse of density)
 #define DELTA_J 0.07
 #define DELTA_I 0.02
+
+// Fwd Decls
+static void blit_buffer(char const* const);
+static char intensity_char(float);
+static void check_controllers(void);
+static void reset_btn();
+#ifdef HW_RVL
+static void power_btn();
+#endif // HW_RVL
+static inline void print_goodbye(char const* const);
+static void* input_thread(void*);
+static void donut_loop(void);
 
 static void *xfb = NULL;
 static GXRModeObj *rmode = NULL;
@@ -74,7 +85,7 @@ int main(void) {
 	donut_loop();
 }
 
-void donut_loop(){
+static void donut_loop(void){
 	float A = 0;		// rotation around one axis (radians)
 	float B = 0;		// rotation around other axis (radians)
 	float i;
@@ -170,7 +181,7 @@ void donut_loop(){
 	}
 }
 
-void *input_thread(__attribute__((unused)) void* args){
+static void *input_thread(void*){
 	while(!do_die && !do_reset){
 		check_controllers();
 		usleep(50000);
@@ -180,7 +191,7 @@ void *input_thread(__attribute__((unused)) void* args){
 	return (void*)NULL;
 }
 
-void check_controllers() {
+static void check_controllers(void) {
 	u32 pressed;
 	// Check Wiimote
 #ifdef HW_RVL
@@ -250,15 +261,17 @@ void check_controllers() {
 
 }
 
-void reset_btn(){
+static void reset_btn(){
 	do_reset = true;
 }
 
-void power_btn(){
+#ifdef HW_RVL
+static void power_btn(){
 	do_die = true;
 }
+#endif // HW_RVL
 
-void blit_buffer(char pixel_buffer[]) {
+static void blit_buffer(char const* const pixel_buffer) {
 	int buffer_pos;
 	// put cursor at home position
 	printf("\x1b[H");
@@ -281,7 +294,7 @@ void blit_buffer(char pixel_buffer[]) {
 	VIDEO_WaitVSync();
 }
 
-char intensity_char(float intensity) {
+static char intensity_char(float const intensity) {
 	char gradient[] = ".,-~:;=!*#$@";
 	int gradient_position = 12 * (intensity / 1.5);
 	if (0 < gradient_position && gradient_position < 12) {
@@ -290,7 +303,7 @@ char intensity_char(float intensity) {
 	return gradient[0];
 }
 
-static inline void print_goodbye(const char* message){
+static inline void print_goodbye(char const* const message){
 	//Assuming a 25 line 80 col terminal
 	//And a message that fits comfortably on 1 line without wrapping
 	//Pad the message vertically and horizontally
