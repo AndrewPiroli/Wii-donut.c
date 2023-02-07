@@ -13,7 +13,7 @@ jobs:
     name: Stable Build
     runs-on: ubuntu-latest
     container:
-      image: docker://devkitpro/devkitppc:20220531
+      image: docker://devkitpro/devkitppc:20230110
     steps:
       - name: Checkout
         uses: actions/checkout@v2.4.0
@@ -35,33 +35,3 @@ jobs:
           path: |
             wii_release.zip
             Wii-donut.c-gc.dol
-  build-unstable:
-    name: Canary Build
-    runs-on: ubuntu-latest
-    container:
-      image: docker://devkitpro/devkitppc:latest
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2.4.0
-       
-      - name: Build Wii and GC executables
-        run: |
-          make
-          mv Wii-donut.c.dol Wii-donut.c.dol.stash
-          mv Wii-donut.c.elf Wii-donut.c.elf.stash
-          make clean
-          make -f Makefile.gc
-          mv Wii-donut.c.dol.stash Wii-donut.c.dol
-          mv Wii-donut.c.elf.stash Wii-donut.c.elf
-          
-      - name: Upload result
-        uses: actions/upload-artifact@v2.3.1
-        with:
-          name: Unstable build results
-          path: |
-            Wii-donut.c.dol
-            Wii-donut.c.elf
-            Wii-donut.c-gc.dol
-            Wii-donut.c-gc.elf
-          retention-days: 1
