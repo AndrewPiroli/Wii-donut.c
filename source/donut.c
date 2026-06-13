@@ -21,24 +21,15 @@
 // Fwd Decls
 static void blit_buffer(char const* const);
 static char intensity_char(float);
-static void check_controllers(void);
 static inline void print_goodbye(char const* const);
-static void* input_thread(void*);
 static void donut_loop(void);
 
 static void *xfb = NULL;
 static GXRModeObj *rmode = NULL;
 
-static volatile bool do_reset = false;
-static volatile bool do_die = false;
-static volatile bool debug = false;
-static volatile bool dirty = false;
-
 // rotation increment around each axis
-static volatile double DELTA_A = 0.04;
-static volatile double DELTA_B = 0.02;
-
-static lwp_t controller_thread_handle = LWP_THREAD_NULL;
+static double DELTA_A = 0.04;
+static double DELTA_B = 0.02;
 
 int main(void) {
 	VIDEO_Init();
@@ -56,19 +47,6 @@ int main(void) {
 	if (rmode->viTVMode & VI_NON_INTERLACE) {
 		VIDEO_WaitVSync();
 	}
-	// setup callbacks for console buttons and wiimote power button
-	// Set the main thread (this thread) to high priority because it does the calculations and blits the buffer to screen
-	lwp_t mainthread = LWP_THREAD_NULL;
-	mainthread = LWP_GetSelf();
-	if (mainthread != LWP_THREAD_NULL){
-		LWP_SetThreadPriority(mainthread, LWP_PRIO_HIGHEST);
-	}
-	// Create another thread to poll the controller.
-	// How do I pick a stack size??
-	// Is there a rule of thumb? 
-	// 1KB seems to be working /shrug
-	LWP_CreateThread(&controller_thread_handle, input_thread, NULL, NULL, 1024, LWP_PRIO_IDLE);
-	// Setup done - start the main program loop.
 	donut_loop();
 }
 
@@ -143,76 +121,10 @@ static void donut_loop(void){
 				}
 			}
 		}
-
 		blit_buffer(pixel_buffer);
-		// We could use a lock around these since they could be updated by the other thread in-between
-		// but it's a spinning donut, so who cares if the rotation is a few radians off what the user technically wanted
 		A += DELTA_A;
 		B += DELTA_B;
-		// Ugly to do this here, but I would have to hoist a bunch of things out of this function to move it properly, so it stays :)
-		if (dirty){
-			printf("\x1b[2J");
-			dirty = false;
-		}
-		if (do_reset || do_die){
-			LWP_JoinThread(controller_thread_handle, NULL);
-			if (do_reset){
-				print_goodbye("Returning to loader!");
-				exit(0);
-			}
-			if (do_die){
-				print_goodbye("Shutting down system!");
-				SYS_ResetSystem(SYS_POWEROFF_STANDBY,0,0);
-			}
-		}
 	}
-}
-
-static void *input_thread(void*){
-	while(!do_die && !do_reset){
-		check_controllers();
-		usleep(50000);
-	}
-	// Supress return type error/warning
-	// I'm sure some future version of libogc will turn this into a null pointer dereference
-	return (void*)NULL;
-}
-
-static void check_controllers(void) {
-	u32 pressed;
-	//Check GC Controller
-	PAD_ScanPads();
-	pressed = PAD_ButtonsDown(0);
-	if (pressed & PAD_BUTTON_LEFT){
-		DELTA_A -= 0.0025;
-		dirty = true;
-	}
-	if (pressed & PAD_BUTTON_RIGHT){
-		DELTA_A += 0.0025;
-		dirty = true;
-	}
-	if (pressed & PAD_BUTTON_UP){
-		DELTA_B += 0.0025;
-		dirty = true;
-	}
-	if (pressed & PAD_BUTTON_DOWN){
-		DELTA_B -= 0.0025;
-		dirty = true;
-	}
-
-	if (pressed & PAD_BUTTON_START) {
-		do_reset = true;
-	}
-	if (pressed & PAD_BUTTON_Y){
-		debug = !debug;
-		dirty = true;
-	}
-	if (pressed & PAD_BUTTON_X){
-		DELTA_A = 0.04;
-		DELTA_B = 0.02;
-		dirty = true;
-	}
-
 }
 
 
@@ -223,9 +135,6 @@ static void blit_buffer(char const* const pixel_buffer) {
 	//For some reason this is too high on the Wii?
 	//Try offsetting a few newlines
 	printf("\n");
-	if (debug){
-		printf("DELTA_A: %f DELTA_B: %f", DELTA_A, DELTA_B);
-	}
 	// for every char in the buffer
 	for (buffer_pos = 0; buffer_pos < 1 + BUFFER_SIZE; buffer_pos++) {
 		// newline if necessary
