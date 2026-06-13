@@ -6,9 +6,6 @@
 
 #include <gccore.h>
 #include <gctypes.h>
-#ifdef HW_RVL
-#include <wiiuse/wpad.h>
-#endif //HW_RVL
 
 #define BUFFER_WIDTH 80
 #define BUFFER_HEIGHT 27
@@ -25,10 +22,6 @@
 static void blit_buffer(char const* const);
 static char intensity_char(float);
 static void check_controllers(void);
-static void reset_btn();
-#ifdef HW_RVL
-static void power_btn();
-#endif // HW_RVL
 static inline void print_goodbye(char const* const);
 static void* input_thread(void*);
 static void donut_loop(void);
@@ -64,12 +57,6 @@ int main(void) {
 		VIDEO_WaitVSync();
 	}
 	// setup callbacks for console buttons and wiimote power button
-	SYS_SetResetCallback(reset_btn); //Console reset button support
-#ifdef HW_RVL
-	SYS_SetPowerCallback(power_btn); //Console power button support
-	WPAD_Init();
-	WPAD_SetPowerButtonCallback(power_btn); //Wiimote power button support
-#endif //HW_RVL
 	// Set the main thread (this thread) to high priority because it does the calculations and blits the buffer to screen
 	lwp_t mainthread = LWP_THREAD_NULL;
 	mainthread = LWP_GetSelf();
@@ -193,39 +180,6 @@ static void *input_thread(void*){
 
 static void check_controllers(void) {
 	u32 pressed;
-	// Check Wiimote
-#ifdef HW_RVL
-	WPAD_ScanPads();
-	pressed = WPAD_ButtonsDown(0);
-	if (pressed & WPAD_BUTTON_HOME) {
-		do_reset = true;
-	}
-	if (pressed & WPAD_BUTTON_LEFT){
-		DELTA_A -= 0.0025;
-		dirty = true;
-	}
-	if (pressed & WPAD_BUTTON_RIGHT){
-		DELTA_A += 0.0025;
-		dirty = true;
-	}
-	if (pressed & WPAD_BUTTON_UP){
-		DELTA_B += 0.0025;
-		dirty = true;
-	}
-	if (pressed & WPAD_BUTTON_DOWN){
-		DELTA_B -= 0.0025;
-		dirty = true;
-	}
-	if (pressed & WPAD_BUTTON_1){
-		debug = !debug;
-		dirty = true;
-	}
-	if (pressed & WPAD_BUTTON_2){
-		DELTA_A = 0.04;
-		DELTA_B = 0.02;
-		dirty = true;
-	}
-#endif //HW_RVL
 	//Check GC Controller
 	PAD_ScanPads();
 	pressed = PAD_ButtonsDown(0);
@@ -261,15 +215,6 @@ static void check_controllers(void) {
 
 }
 
-static void reset_btn(){
-	do_reset = true;
-}
-
-#ifdef HW_RVL
-static void power_btn(){
-	do_die = true;
-}
-#endif // HW_RVL
 
 static void blit_buffer(char const* const pixel_buffer) {
 	int buffer_pos;
