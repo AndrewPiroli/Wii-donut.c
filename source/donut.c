@@ -49,129 +49,54 @@ int main(void) {
 	}
 	donut_loop();
 }
+#define R(mul,shift,x,y) \
+  _=x; \
+  x -= mul*y>>shift; \
+  y += mul*_>>shift; \
+  _ = 3145728-x*x-y*y>>11; \
+  x = x*_>>10; \
+  y = y*_>>10;
+
+int8_t b[1760], z[1760];
 
 static void donut_loop(void){
-	float A = 0;		// rotation around one axis (radians)
-	float B = 0;		// rotation around other axis (radians)
-	float i;
-	float j;
-	float z_buffer[BUFFER_SIZE];
-	char pixel_buffer[BUFFER_SIZE];
+  int sA=1024,cA=0,sB=1024,cB=0,_;
+  for (;;) {
+    memset(b, 32, 1760);  // text buffer
+    memset(z, 127, 1760);   // z buffer
+    int sj=0, cj=1024;
+    for (int j = 0; j < 90; j++) {
+      int si = 0, ci = 1024;  // sine and cosine of angle i
+      for (int i = 0; i < 324; i++) {
+        int R1 = 1, R2 = 2048, K2 = 5120*1024;
 
-	// clear the screen
-	printf("\x1b[2J");
+        int x0 = R1*cj + R2,
+            x1 = ci*x0 >> 10,
+            x2 = cA*sj >> 10,
+            x3 = si*x0 >> 10,
+            x4 = R1*x2 - (sA*x3 >> 10),
+            x5 = sA*sj >> 10,
+            x6 = K2 + R1*1024*x5 + cA*x3,
+            x7 = cj*si >> 10,
+            x = 40 + 30*(cB*x1 - sB*x4)/x6,
+            y = 12 + 15*(cB*x4 + sB*x1)/x6,
+            N = (-cA*x7 - cB*((-sA*x7>>10) + x2) - ci*(cj*sB >> 10) >> 10) - x5 >> 7;
 
-	for (;;) {
+        int o = x + 80 * y;
+        int8_t zz = (x6-K2)>>15;
+        if (22 > y && y > 0 && x > 0 && 80 > x && zz < z[o]) {
+          z[o] = zz;
+          b[o] = ".,-~:;=!*#$@"[N > 0 ? N : 0];
+        }
+        R(5, 8, ci, si)  // rotate i
+      }
+      R(9, 7, cj, sj)  // rotate j
+    }
+    for (int k = 0; 1761 > k; k++)
+      putchar(k % 80 ? b[k] : 10);
+    R(5, 7, cA, sA);
+    R(5, 8, cB, sB);
+    printf("\x1b[23A");
+  }
 
-		// reset the pixel and z buffers
-		memset(pixel_buffer, 32, BUFFER_SIZE);
-		memset(z_buffer, 0, sizeof(float) * BUFFER_SIZE);
-
-		float sin_A = sin(A);
-		float cos_A = cos(A);
-		float cos_B = cos(B);
-		float sin_B = sin(B);
-
-		// for every point on the surface of the donut
-		for (j = 0; j < TWO_PI; j += DELTA_J) {
-			float cos_j = cos(j);
-			float sin_j = sin(j);
-			for (i = 0; i < TWO_PI; i += DELTA_I) {
-				float sin_i = sin(i);
-				float cos_i = cos(i);
-				float h = cos_j + 2;
-				float D =
-				    1 / (sin_i * h * sin_A + sin_j * cos_A + 5);
-				float t = sin_i * h * cos_A - sin_j * sin_A;
-
-				// project onto buffer surface point (x,y)
-				int x =
-				    (BUFFER_WIDTH / 2) +
-				    2 * IMAGE_SCALE * D * (cos_i * h * cos_B -
-							   t * sin_B);
-				int y =
-				    (BUFFER_HEIGHT / 2) +
-				    IMAGE_SCALE * D * (cos_i * h * sin_B +
-						       t * cos_B);
-
-				// only consider points that occur on the defined surface
-				if (0 < x && x < BUFFER_WIDTH && 0 < y
-				    && y < BUFFER_HEIGHT) {
-
-					// calculate position on linear buffer
-					int buffer_pos = (BUFFER_WIDTH * y) + x;
-
-					// if this point is closer to the viewer than previous point at this position, overwrite it
-					if (D > z_buffer[buffer_pos]) {
-						z_buffer[buffer_pos] = D;
-
-						// calculate intensity of this point
-						float intensity =
-						    (cos_B *
-						     (sin_j * sin_A -
-						      sin_i * cos_j * cos_A)
-						     - sin_i * cos_j * sin_A -
-						     sin_j * cos_A -
-						     cos_i * cos_j * sin_B);
-
-						// write the intensity to the buffer
-						pixel_buffer[buffer_pos] =
-						    intensity_char(intensity);
-					}
-				}
-			}
-		}
-		blit_buffer(pixel_buffer);
-		A += DELTA_A;
-		B += DELTA_B;
-	}
-}
-
-
-static void blit_buffer(char const* const pixel_buffer) {
-	int buffer_pos;
-	// put cursor at home position
-	printf("\x1b[H");
-	//For some reason this is too high on the Wii?
-	//Try offsetting a few newlines
-	printf("\n");
-	// for every char in the buffer
-	for (buffer_pos = 0; buffer_pos < 1 + BUFFER_SIZE; buffer_pos++) {
-		// newline if necessary
-		if (buffer_pos % BUFFER_WIDTH == 0) {
-			putchar('\n');
-		} else {
-			putchar(pixel_buffer[buffer_pos]);
-		}
-	}
-
-	VIDEO_WaitVSync();
-}
-
-static char intensity_char(float const intensity) {
-	char gradient[] = ".,-~:;=!*#$@";
-	int gradient_position = 12 * (intensity / 1.5);
-	if (0 < gradient_position && gradient_position < 12) {
-		return gradient[gradient_position];
-	}
-	return gradient[0];
-}
-
-static inline void print_goodbye(char const* const message){
-	//Assuming a 25 line 80 col terminal
-	//And a message that fits comfortably on 1 line without wrapping
-	//Pad the message vertically and horizontally
-	printf("\x1b[2J"); //Clear screen
-	printf("\x1b[H"); //Reset cursor
-	if (message == NULL){
-		return;
-	}
-	unsigned int half_message_len = floor(strlen(message)/2);
-	if (half_message_len > 39){
-		return;
-	}
-	printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n" //Vertical padding
-	"%*s%s\n", 40-half_message_len, "", message);
-	usleep(500000);
-	// Program is about to die, so no cleanup needed.
 }
